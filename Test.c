@@ -8,7 +8,7 @@
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_NUM_ARGS 64
 
-// Function to parse the command and its arguments
+// Funcion para darle formato al comando y a sus argumentos
 void parse_command(char *command, char **args) {
     for (int i = 0; i < MAX_NUM_ARGS; i++) {
         args[i] = strsep(&command, " ");
@@ -16,26 +16,26 @@ void parse_command(char *command, char **args) {
     }
 }
 
-// Function to execute the command
+// Funcion para ejecutar comando
 void execute_command(char **args) {
     pid_t pid = fork();
     
     if (pid == 0) {
-        // Child process
+        // Proceso Hijo
         if (execvp(args[0], args) == -1) {
             perror("Error executing command");
         }
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
-        // Error forking
+        // Error en el fork
         perror("Error forking");
     } else {
-        // Parent process
+        // Proceso del padre
         wait(NULL);
     }
 }
 
-// Main function
+
 int main() {
     char command[MAX_COMMAND_LENGTH];
     char *args[MAX_NUM_ARGS];
@@ -44,15 +44,15 @@ int main() {
         printf("mishell:$ ");
         fgets(command, MAX_COMMAND_LENGTH, stdin);
 
-        // Remove trailing newline character
+        
         command[strcspn(command, "\n")] = 0;
 
-        // Handle "enter" without a command
+        // Soportar input sin nada
         if (strlen(command) == 0) {
             continue;
         }
 
-        // Handle exit command
+        // Soportar exit
         if (strcmp(command, "exit") == 0) {
             break;
         }
