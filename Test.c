@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <errno.h>
 
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_NUM_ARGS 64
@@ -38,7 +39,11 @@ void execute_single_command(char **args) {
     
     if (pid == 0) {
         if (execvp(args[0], args) == -1) {
-            perror("Error executing command");
+            if (errno == ENOENT) {
+                fprintf(stderr, "Error: orden no encontrada: %s\n", args[0]);
+            } else {
+                perror("Error ejecutando el comando");
+            }
         }
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
