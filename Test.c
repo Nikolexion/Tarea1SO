@@ -98,6 +98,20 @@ int split_by_pipe(char *command, char **commands) {
     return i;
 }
 
+// Funcion para establecer un recordatorio
+void set_reminder(int seconds, const char *message) {
+    pid_t pid = fork();
+    
+    if (pid == 0) {
+        // Child process for reminder
+        sleep(seconds);
+        printf("\n[Recordatorio]: %s\n", message);
+        exit(EXIT_SUCCESS);
+    } else if (pid < 0) {
+        perror("Error forking reminder process");
+    }
+}
+
 // Funcion main
 int main() {
     char command[MAX_COMMAND_LENGTH];
@@ -118,6 +132,30 @@ int main() {
         // Maneja el comando de salida
         if (strcmp(command, "exit") == 0) {
             break;
+        }
+
+        // Maneja el comando de recordatorio
+        if (strncmp(command, "set recordatorio", 16) == 0) {
+            // Parse the command to get time and message
+            char *args[MAX_NUM_ARGS];
+            parse_command(command, args);
+
+            if (args[2] != NULL && args[3] != NULL) {
+                int seconds = atoi(args[2]);
+                char message[MAX_COMMAND_LENGTH] = "";
+
+                // Join the remaining arguments as the message
+                for (int i = 3; args[i] != NULL; i++) {
+                    strcat(message, args[i]);
+                    if (args[i + 1] != NULL) strcat(message, " ");  
+                }
+
+                set_reminder(seconds, message);
+                continue;
+            } else {
+                printf("Usage: set recordatorio <seconds> \"<message>\"\n");
+                continue;
+            }
         }
 
         int num_commands = split_by_pipe(command, commands);
