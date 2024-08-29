@@ -9,7 +9,7 @@
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_NUM_ARGS 64
 
-// Function to trim leading and trailing spaces
+// Funcion para recortar espacios iniciales y finales
 char *trim_spaces(char *str) {
     while(isspace((unsigned char)*str)) str++;
     if(*str == 0) return str;
@@ -21,23 +21,22 @@ char *trim_spaces(char *str) {
     return str;
 }
 
-// Function to parse the command and its arguments
+// Funcion para analizar el comando y sus argumentos
 void parse_command(char *command, char **args) {
-    command = trim_spaces(command);  // Trim any leading/trailing spaces
+    command = trim_spaces(command);  
     for (int i = 0; i < MAX_NUM_ARGS; i++) {
         args[i] = strsep(&command, " ");
         if (args[i] == NULL) break;
-        args[i] = trim_spaces(args[i]);  // Trim spaces around each argument
-        if (strlen(args[i]) == 0) i--;  // Remove empty arguments caused by extra spaces
+        args[i] = trim_spaces(args[i]);  
+        if (strlen(args[i]) == 0) i--;  
     }
 }
 
-// Function to execute a single command
+// Funcion para ejecutar un solo comando
 void execute_single_command(char **args) {
     pid_t pid = fork();
     
     if (pid == 0) {
-        // Child process
         if (execvp(args[0], args) == -1) {
             perror("Error executing command");
         }
@@ -46,12 +45,11 @@ void execute_single_command(char **args) {
         // Error forking
         perror("Error forking");
     } else {
-        // Parent process   
         wait(NULL);
     }
 }
 
-// Function to execute commands with pipes
+// Funcion para ejecutar comandos con pipes
 void execute_piped_commands(char **commands, int num_commands) {
     int pipefd[2];
     pid_t pid;
@@ -62,10 +60,9 @@ void execute_piped_commands(char **commands, int num_commands) {
         pid = fork();
         
         if (pid == 0) {
-            // Child process
-            dup2(fd_in, 0); // Change the input according to the old one
+            dup2(fd_in, 0); 
             if (i < num_commands - 1) {
-                dup2(pipefd[1], 1); // Change the output to the pipe
+                dup2(pipefd[1], 1); 
             }
             close(pipefd[0]);
             
@@ -79,25 +76,24 @@ void execute_piped_commands(char **commands, int num_commands) {
             // Error forking
             perror("Error forking");
         } else {
-            // Parent process
             wait(NULL);
             close(pipefd[1]);
-            fd_in = pipefd[0]; // Save the input for the next command
+            fd_in = pipefd[0]; 
         }
     }
 }
 
-// Function to split the command by pipes
+// Funcion para dividir el comando por pipes
 int split_by_pipe(char *command, char **commands) {
     int i = 0;
     while ((commands[i] = strsep(&command, "|")) != NULL) {
-        commands[i] = trim_spaces(commands[i]);  // Trim spaces around each command
+        commands[i] = trim_spaces(commands[i]);  
         i++;
     }
     return i;
 }
 
-// Main function
+// Funcion main
 int main() {
     char command[MAX_COMMAND_LENGTH];
     char *commands[MAX_NUM_ARGS];
@@ -106,15 +102,15 @@ int main() {
         printf("shell:$ ");
         fgets(command, MAX_COMMAND_LENGTH, stdin);
 
-        // Remove trailing newline character
+        // Quitamos el salto de linea
         command[strcspn(command, "\n")] = 0;
 
-        // Handle "enter" without a command
+        // Maneja "enter" sin comando
         if (strlen(command) == 0) {
             continue;
         }
 
-        // Handle exit command
+        // Maneja el comando de salida
         if (strcmp(command, "exit") == 0) {
             break;
         }
