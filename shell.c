@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
+#include <signal.h>
 
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_NUM_ARGS 64
@@ -98,6 +99,15 @@ int split_by_pipe(char *command, char **commands) {
     return i;
 }
 
+// Manejador de la señal SIGCHLD
+void sigchld_handler(int signum) {
+    int saved_errno = errno;
+    while (waitpid(-1, NULL, WNOHANG) > 0);
+    errno = saved_errno;
+    //printf("\nshell:$ "); // Reimprimir el prompt cuando termine un proceso hijo
+    fflush(stdout);
+}
+
 // Funcion para establecer un recordatorio
 void set_reminder(int seconds, const char *message) {
     pid_t pid = fork();
@@ -106,6 +116,7 @@ void set_reminder(int seconds, const char *message) {
         // Child process for reminder
         sleep(seconds);
         printf("\n[Recordatorio]: %s\n", message);
+        printf("shell:$ ");
         exit(EXIT_SUCCESS);
     } else if (pid < 0) {
         perror("Error forking reminder process");
@@ -114,6 +125,14 @@ void set_reminder(int seconds, const char *message) {
 
 // Funcion main
 int main() {
+    struct sigaction sa;
+    sa.sa_handler = &sigchld_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    if (sigaction(SIGCHLD, &sa, 0) == -1) {
+        perror("Error setting up SIGCHLD handler");
+        exit(EXIT_FAILURE);
+    }
     char command[MAX_COMMAND_LENGTH];
     char *commands[MAX_NUM_ARGS];
     
