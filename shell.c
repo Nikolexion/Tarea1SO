@@ -58,7 +58,7 @@ void execute_single_command(char **args) {
         }
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
-        // Error forking
+        // Error haciendo fork
         perror("Error forking");
     } else {
         wait(NULL);
@@ -89,7 +89,7 @@ void execute_piped_commands(char **commands, int num_commands) {
                 exit(EXIT_FAILURE);
             }
         } else if (pid < 0) {
-            // Error forking
+            // Error haciendo fork
             perror("Error forking");
         } else {
             wait(NULL);
@@ -123,7 +123,7 @@ void set_reminder(int seconds, const char *message) {
     pid_t pid = fork();
     
     if (pid == 0) {
-        // Child process for reminder
+        // Proceso hijo para el recordatorio
         sleep(seconds);
         printf("\n[Recordatorio]: %s\n", message);
         printf("shell:$ ");
@@ -156,6 +156,7 @@ void load_favs_file_path() {
     }
 }
 
+// Funcion para crear un archivo de favoritos
 void favs_crear(char *path) {
     favs_set(favs_file);
     strncpy(favs_file, path, MAX_COMMAND_LENGTH);
@@ -168,12 +169,14 @@ void favs_crear(char *path) {
     }
 }
 
+// Funcion para mostrar los comandos favoritos
 void favs_mostrar() {
     for (int i = 0; i < num_favorites; i++) {
         printf("%d: %s\n", favorites[i].id, favorites[i].command);
     }
 }
 
+// Funcion para eliminar comandos favoritos 
 void favs_eliminar(char *ids) {
     char *id_str = strtok(ids, ",");
     while (id_str) {
@@ -191,6 +194,7 @@ void favs_eliminar(char *ids) {
     }
 }
 
+// Funcion para buscar un comando favorito en especifico
 void favs_buscar(char *cmd) {
     for (int i = 0; i < num_favorites; i++) {
         if (strstr(favorites[i].command, cmd)) {
@@ -199,11 +203,13 @@ void favs_buscar(char *cmd) {
     }
 }
 
+// Funcion para borrar todos los comandos favoritos
 void favs_borrar() {
     num_favorites = 0;
     printf("Todos los comandos favoritos han sido borrados.\n");
 }
 
+// Funcion para ejecutar un comando favorito
 void favs_ejecutar(int id) {
     for (int i = 0; i < num_favorites; i++) {
         if (favorites[i].id == id) {
@@ -215,6 +221,7 @@ void favs_ejecutar(int id) {
     }
 }
 
+// Funcion para cargar los favoritos desde el archivo
 void favs_cargar() {
     FILE *file = fopen(favs_file, "r");
     if (file) {
@@ -236,7 +243,7 @@ void favs_cargar() {
     }
 }
 
-
+// Funcion para guardar los favoritos en el archivo
 void favs_guardar() {
     if (strlen(favs_file) == 0) {
         printf("Error: No se ha establecido un archivo de favoritos.\n");
@@ -285,7 +292,7 @@ void favs_set(char *path) {
     printf("Archivo de favoritos establecido en: %s\n", favs_file);
 }
 
-
+// Administrador de comandos favs
 void handle_favs_command(char *command) {
     // Separar la subcomando y sus argumentos
     char *args[MAX_NUM_ARGS];
@@ -361,7 +368,7 @@ int main() {
 
         // Maneja el comando de recordatorio
         if (strncmp(command, "set recordatorio", 16) == 0) {
-            // Parse the command to get time and message
+            // Analiza el comando para obtener el tiempo y el mensaje
             char *args[MAX_NUM_ARGS];
             parse_command(command, args);
 
@@ -369,7 +376,7 @@ int main() {
                 int seconds = atoi(args[2]);
                 char message[MAX_COMMAND_LENGTH] = "";
 
-                // Join the remaining arguments as the message
+                // Une los argumentos del mensaje en una sola cadena
                 for (int i = 3; args[i] != NULL; i++) {
                     strcat(message, args[i]);
                     if (args[i + 1] != NULL) strcat(message, " ");  
