@@ -20,6 +20,7 @@ typedef struct {
 Favorite favorites[MAX_NUM_ARGS];
 int num_favorites = 0;
 char favs_file[MAX_COMMAND_LENGTH] = "";
+char ultimo_comando[MAX_COMMAND_LENGTH] = "";
 
 // Funcion para recortar espacios iniciales y finales
 char *trim_spaces(char *str) {
@@ -44,6 +45,7 @@ void parse_command(char *command, char **args) {
     }
 }
 
+void favs_agregar(char *cmd);
 // Funcion para ejecutar un solo comando
 void execute_single_command(char **args) {
     pid_t pid = fork();
@@ -61,7 +63,17 @@ void execute_single_command(char **args) {
         // Error haciendo fork
         perror("Error forking");
     } else {
-        wait(NULL);
+        int status;
+        waitpid(pid, &status, 0);
+        
+        // Solo agregar el comando si fue exitoso (status == 0)
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            if (num_favorites < MAX_NUM_ARGS) {
+                favs_agregar(args[0]);
+            } else {
+                printf("Error: Número máximo de favoritos alcanzado.\n");
+            }
+        }
     }
 }
 
@@ -70,7 +82,8 @@ void execute_piped_commands(char **commands, int num_commands) {
     int pipefd[2];
     pid_t pid;
     int fd_in = 0;
-
+    int guardar = 0;
+    
     for (int i = 0; i < num_commands; i++) {
         pipe(pipefd);
         pid = fork();
@@ -92,10 +105,19 @@ void execute_piped_commands(char **commands, int num_commands) {
             // Error haciendo fork
             perror("Error forking");
         } else {
-            wait(NULL);
+            int status;
+            waitpid(pid, &status, 0);
+           
+            // Solo agregar el comando si fue exitoso (status == 0)
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+                guardar = 1;
+            }
             close(pipefd[1]);
             fd_in = pipefd[0]; 
         }
+    }
+    if(guardar == 0){
+        favs_agregar(ultimo_comando);
     }
 }
 
@@ -406,8 +428,6 @@ int main() {
             break;
         }
 
-        favs_agregar(command);
-
         // Maneja el comando de recordatorio
         if (strncmp(command, "set recordatorio", 16) == 0) {
             // Analiza el comando para obtener el tiempo y el mensaje
@@ -437,7 +457,8 @@ int main() {
             handle_favs_command(command + 5);  // Pasa la parte del comando después de "favs "
             continue;
         }
-
+        
+        strcpy(ultimo_comando, command);
         int num_commands = split_by_pipe(command, commands);
         if (num_commands > 1) {
             execute_piped_commands(commands, num_commands);
