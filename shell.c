@@ -160,7 +160,7 @@ void favs_set(char *path);
 
 // Funcion para crear un archivo de favoritos
 void favs_crear(char *path) {
-    favs_set(favs_file);
+    favs_set(path);
     strncpy(favs_file, path, MAX_COMMAND_LENGTH);
     FILE *file = fopen(favs_file, "w");
     if (file) {
@@ -257,19 +257,49 @@ void favs_guardar() {
         printf("Error: No se ha establecido un archivo de favoritos.\n");
         return;
     }
-    FILE *file = fopen(favs_file, "a");
-    if (file) {
-        for (int i = 0; i < num_favorites; i++) {
-            char *args[MAX_NUM_ARGS];
-            parse_command(favorites[i].command, args);
-            execute_single_command(args);
-            break;
-        }
-        fclose(file);
-        printf("Favoritos guardados en: %s\n", favs_file);
-    } else {
-        perror("Error al guardar el archivo de favoritos");
+
+    // Abre el archivo en modo lectura para verificar si el comando ya está
+    FILE *file = fopen(favs_file, "r");
+    if (!file) {
+        perror("Error al abrir el archivo de favoritos para lectura");
+        return;
     }
+
+    // Variable para leer las líneas del archivo
+    char line[MAX_COMMAND_LENGTH];
+    char existing_commands[num_favorites][MAX_COMMAND_LENGTH];
+    int existing_count = 0;
+
+    // Leer todos los comandos existentes en el archivo
+    while (fgets(line, sizeof(line), file)) {
+        line[strcspn(line, "\n")] = 0; // Elimina el salto de línea
+        strcpy(existing_commands[existing_count++], line);
+    }
+    fclose(file);
+
+    // Abre el archivo en modo append 
+    file = fopen(favs_file, "a");
+    if (!file) {
+        perror("Error al abrir el archivo de favoritos para escritura");
+        return;
+    }
+
+    // Guardar los comandos únicos
+    for (int i = 0; i < num_favorites; i++) {
+        int found = 0;
+        for (int j = 0; j < existing_count; j++) {
+            if (strcmp(favorites[i].command, existing_commands[j]) == 0) {
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            fprintf(file, "%s\n", favorites[i].command);
+        }
+    }
+
+    fclose(file);
+    printf("Favoritos guardados en: %s\n", favs_file);
 }
 
 // Agrega el comando a la lista en memoria, evitando repeticiones y comandos asociados a favs
@@ -355,7 +385,7 @@ int main() {
     // Intenta cargar el archivo de favoritos al inicio
     if (strlen(favs_file) > 0) {
         favs_set(favs_file);
-        favs_cargar();
+        //favs_cargar();
     }
 
     while (1) {
