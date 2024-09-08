@@ -156,6 +156,8 @@ void load_favs_file_path() {
     }
 }
 
+void favs_set(char *path);
+
 // Funcion para crear un archivo de favoritos
 void favs_crear(char *path) {
     favs_set(favs_file);
@@ -213,9 +215,15 @@ void favs_borrar() {
 void favs_ejecutar(int id) {
     for (int i = 0; i < num_favorites; i++) {
         if (favorites[i].id == id) {
-            char *args[MAX_NUM_ARGS];
-            parse_command(favorites[i].command, args);
-            execute_single_command(args);
+            char *commands[MAX_NUM_ARGS];
+            int num_commands = split_by_pipe(favorites[i].command, commands);
+            if (num_commands > 1) {
+                execute_piped_commands(commands, num_commands);
+            } else {
+                char *args[MAX_NUM_ARGS];
+                parse_command(favorites[i].command, args);
+                execute_single_command(args);
+            }
             break;
         }
     }
@@ -252,7 +260,10 @@ void favs_guardar() {
     FILE *file = fopen(favs_file, "a");
     if (file) {
         for (int i = 0; i < num_favorites; i++) {
-            fprintf(file, "%s\n", favorites[i].command);
+            char *args[MAX_NUM_ARGS];
+            parse_command(favorites[i].command, args);
+            execute_single_command(args);
+            break;
         }
         fclose(file);
         printf("Favoritos guardados en: %s\n", favs_file);
