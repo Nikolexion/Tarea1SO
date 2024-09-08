@@ -356,7 +356,6 @@ void favs_set(char *path) {
     strncpy(favs_file, path, MAX_COMMAND_LENGTH);
     favs_file[MAX_COMMAND_LENGTH - 1] = '\0'; 
     save_favs_file_path(favs_file);
-    printf("Archivo de favoritos establecido en: %s\n", favs_file);
 }
 
 // Administrador de comandos favs
