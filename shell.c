@@ -171,14 +171,14 @@ void favs_crear(char *path) {
     }
 }
 
-// Funcion para mostrar los comandos favoritos
+// Funcion para mostrar los comandos favoritos en memoria
 void favs_mostrar() {
     for (int i = 0; i < num_favorites; i++) {
         printf("%d: %s\n", favorites[i].id, favorites[i].command);
     }
 }
 
-// Funcion para eliminar comandos favoritos 
+// Funcion para eliminar comandos favoritos en memoria
 void favs_eliminar(char *ids) {
     char *id_str = strtok(ids, ",");
     while (id_str) {
@@ -187,6 +187,7 @@ void favs_eliminar(char *ids) {
             if (favorites[i].id == id) {
                 for (int j = i; j < num_favorites - 1; j++) {
                     favorites[j] = favorites[j + 1];
+                    favorites[j].id = j + 1;
                 }
                 num_favorites--;
                 break;
