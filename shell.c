@@ -235,11 +235,14 @@ void favs_borrar() {
 }
 
 // Funcion para ejecutar un comando favorito
-void favs_ejecutar(int id) {
+void favs_ejecutar(int id) { 
     for (int i = 0; i < num_favorites; i++) {
         if (favorites[i].id == id) {
             char *commands[MAX_NUM_ARGS];
-            int num_commands = split_by_pipe(favorites[i].command, commands);
+            strcpy(ultimo_comando, favorites[i].command);
+            char *command;
+            strcpy(command, favorites[i].command);
+            int num_commands = split_by_pipe(command, commands);
             if (num_commands > 1) {
                 execute_piped_commands(commands, num_commands);
             } else {
