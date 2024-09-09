@@ -22,6 +22,9 @@ int num_favorites = 0;
 char favs_file[MAX_COMMAND_LENGTH] = "";
 char ultimo_comando[MAX_COMMAND_LENGTH] = "";
 
+// Declaración de la función favs_agregar
+void favs_agregar(char *cmd);
+
 // Funcion para recortar espacios iniciales y finales
 char *cut_spaces(char *str) {
     while(isspace((unsigned char)*str)) str++;
@@ -137,7 +140,7 @@ void sigchld_handler(int signum) {
     int saved_errno = errno;
     while (waitpid(-1, NULL, WNOHANG) > 0);
     errno = saved_errno;
-    //printf("\nshell:$ "); // Reimprimir el prompt cuando termine un proceso hijo
+    
     fflush(stdout);
 }
 
@@ -145,13 +148,13 @@ void sigchld_handler(int signum) {
 void set_reminder(int seconds, const char *message) {
     pid_t pid = fork();
     
+    // Proceso hijo para el recordatorio
     if (pid == 0) {
-        // Proceso hijo para el recordatorio
         sleep(seconds);
         printf("\n[Recordatorio]: %s\n", message);
         printf("shell:$ ");
         exit(EXIT_SUCCESS);
-    } else if (pid < 0) {
+    } else if (pid < 0) {   //Proceso padre
         perror("Error haciendo fork para el recordatorio");
     }
 }
@@ -172,6 +175,7 @@ void load_favs_file_path() {
     FILE *config_file = fopen("config.txt", "r");
     if (config_file) {
         if (fgets(favs_file, MAX_COMMAND_LENGTH, config_file)) {
+            
             // Elimina el salto de línea
             favs_file[strcspn(favs_file, "\n")] = '\0';
         }
@@ -345,7 +349,7 @@ void favs_agregar(char *cmd) {
         favoritos[num_favorites].id = num_favorites + 1;
         strncpy(favoritos[num_favorites].command, cmd, MAX_COMMAND_LENGTH);
         num_favorites++;
-        //favs_guardar(); // Guardar automáticamente al agregar
+
         printf("Comando añadido a favoritos: %s\n", cmd);
     } else {
         printf("Error: Número máximo de favoritos alcanzado.\n");
@@ -368,27 +372,35 @@ void handle_favs_command(char *command) {
     if (strcmp(args[0], "crear") == 0) {
         // Lógica para crear el archivo de favoritos
         favs_crear(args[1]);
+
     } else if (strcmp(args[0], "mostrar") == 0) {
         // Lógica para mostrar los favoritos en memoria
         favs_mostrar();
+
     } else if (strcmp(args[0], "eliminar") == 0) {
         // Lógica para eliminar favoritos segun su indice en memoria
         favs_eliminar(args[1]);
+
     } else if (strcmp(args[0], "buscar") == 0) {
         // Lógica para buscar favoritos
         favs_buscar(args[1]);
+
     } else if (strcmp(args[0], "borrar") == 0) {
         // Lógica para borrar todos los favoritos en memoria
         favs_borrar();
+
     } else if (strcmp(args[0], "guardar") == 0) {
         // Lógica para guardar los favoritos en el archivo
         favs_guardar();
+
     } else if (strcmp(args[0], "cargar") == 0) {
         // Lógica para cargar los favoritos del archivo
         favs_cargar();
+
     } else if (strcmp(args[0], "ejecutar") == 0) {
         // Lógica para ejecutar un comando de la memoria
         favs_ejecutar(atoi(args[1]));
+
     } else {
         fprintf(stderr, "Error: Subcomando favs no reconocido: %s\n", args[0]);
     }
@@ -411,7 +423,6 @@ int main() {
     // Intenta cargar el archivo de favoritos al inicio
     if (strlen(favs_file) > 0) {
         favs_set(favs_file);
-        //favs_cargar();
     }
 
     while (1) {
