@@ -15,15 +15,15 @@
 typedef struct {
     int id;
     char command[MAX_COMMAND_LENGTH];
-} Favorite;
+} Favorito;
 
-Favorite favorites[MAX_NUM_ARGS];
+Favorito favoritos[MAX_NUM_ARGS];
 int num_favorites = 0;
 char favs_file[MAX_COMMAND_LENGTH] = "";
 char ultimo_comando[MAX_COMMAND_LENGTH] = "";
 
 // Funcion para recortar espacios iniciales y finales
-char *trim_spaces(char *str) {
+char *cut_spaces(char *str) {
     while(isspace((unsigned char)*str)) str++;
     if(*str == 0) return str;
 
@@ -36,16 +36,16 @@ char *trim_spaces(char *str) {
 
 // Funcion para analizar el comando y sus argumentos
 void parse_command(char *command, char **args) {
-    command = trim_spaces(command);  
+    command = cut_spaces(command);  
     for (int i = 0; i < MAX_NUM_ARGS; i++) {
         args[i] = strsep(&command, " ");
         if (args[i] == NULL) break;
-        args[i] = trim_spaces(args[i]);  
+        args[i] = cut_spaces(args[i]);  
         if (strlen(args[i]) == 0) i--;  
     }
 }
 
-void favs_agregar(char *cmd);
+
 // Funcion para ejecutar un solo comando
 void execute_single_command(char **args) {
     pid_t pid = fork();
@@ -83,6 +83,7 @@ void execute_piped_commands(char **commands, int num_commands) {
     pid_t pid;
     int fd_in = 0;
     int guardar = 0;
+
     
     for (int i = 0; i < num_commands; i++) {
         pipe(pipefd);
@@ -98,12 +99,12 @@ void execute_piped_commands(char **commands, int num_commands) {
             char *args[MAX_NUM_ARGS];
             parse_command(commands[i], args);
             if (execvp(args[0], args) == -1) {
-                perror("Error executing command");
+                perror("Error ejecutando el comando");
                 exit(EXIT_FAILURE);
             }
         } else if (pid < 0) {
             // Error haciendo fork
-            perror("Error forking");
+            perror("Error haciendo fork");
         } else {
             int status;
             waitpid(pid, &status, 0);
@@ -125,7 +126,7 @@ void execute_piped_commands(char **commands, int num_commands) {
 int split_by_pipe(char *command, char **commands) {
     int i = 0;
     while ((commands[i] = strsep(&command, "|")) != NULL) {
-        commands[i] = trim_spaces(commands[i]);  
+        commands[i] = cut_spaces(commands[i]);  
         i++;
     }
     return i;
@@ -151,7 +152,7 @@ void set_reminder(int seconds, const char *message) {
         printf("shell:$ ");
         exit(EXIT_SUCCESS);
     } else if (pid < 0) {
-        perror("Error forking reminder process");
+        perror("Error haciendo fork para el recordatorio");
     }
 }
 
@@ -196,7 +197,7 @@ void favs_crear(char *path) {
 // Funcion para mostrar los comandos favoritos en memoria
 void favs_mostrar() {
     for (int i = 0; i < num_favorites; i++) {
-        printf("%d: %s\n", favorites[i].id, favorites[i].command);
+        printf("%d: %s\n", favoritos[i].id, favoritos[i].command);
     }
 }
 
@@ -206,10 +207,10 @@ void favs_eliminar(char *ids) {
     while (id_str) {
         int id = atoi(id_str);
         for (int i = 0; i < num_favorites; i++) {
-            if (favorites[i].id == id) {
+            if (favoritos[i].id == id) {
                 for (int j = i; j < num_favorites - 1; j++) {
-                    favorites[j] = favorites[j + 1];
-                    favorites[j].id = j + 1;
+                    favoritos[j] = favoritos[j + 1];
+                    favoritos[j].id = j + 1;
                 }
                 num_favorites--;
                 break;
@@ -222,8 +223,8 @@ void favs_eliminar(char *ids) {
 // Funcion para buscar un comando favorito en especifico
 void favs_buscar(char *cmd) {
     for (int i = 0; i < num_favorites; i++) {
-        if (strstr(favorites[i].command, cmd)) {
-            printf("%d: %s\n", favorites[i].id, favorites[i].command);
+        if (strstr(favoritos[i].command, cmd)) {
+            printf("%d: %s\n", favoritos[i].id, favoritos[i].command);
         }
     }
 }
@@ -237,17 +238,17 @@ void favs_borrar() {
 // Funcion para ejecutar un comando favorito
 void favs_ejecutar(int id) { 
     for (int i = 0; i < num_favorites; i++) {
-        if (favorites[i].id == id) {
+        if (favoritos[i].id == id) {
             char *commands[MAX_NUM_ARGS];
-            strcpy(ultimo_comando, favorites[i].command);
+            strcpy(ultimo_comando, favoritos[i].command);
             char *command;
-            strcpy(command, favorites[i].command);
+            strcpy(command, favoritos[i].command);
             int num_commands = split_by_pipe(command, commands);
             if (num_commands > 1) {
                 execute_piped_commands(commands, num_commands);
             } else {
                 char *args[MAX_NUM_ARGS];
-                parse_command(favorites[i].command, args);
+                parse_command(favoritos[i].command, args);
                 execute_single_command(args);
             }
             break;
@@ -263,14 +264,14 @@ void favs_cargar() {
         num_favorites = 0;  // Reinicia el contador de favoritos
         while (fgets(line, sizeof(line), file)) {
             line[strcspn(line, "\n")] = 0; // Eliminar salto de línea
-            favorites[num_favorites].id = num_favorites + 1; // Actualizar el índice correctamente
-            strncpy(favorites[num_favorites].command, line, MAX_COMMAND_LENGTH);
+            favoritos[num_favorites].id = num_favorites + 1; // Actualizar el índice correctamente
+            strncpy(favoritos[num_favorites].command, line, MAX_COMMAND_LENGTH);
             num_favorites++;
         }
         fclose(file);
         printf("Favoritos cargados desde: %s\n", favs_file);
         for (int i = 0; i < num_favorites; i++) {
-            printf("%d: %s\n", favorites[i].id, favorites[i].command);
+            printf("%d: %s\n", favoritos[i].id, favoritos[i].command);
         }
     } else {
         perror("Error al cargar el archivo de favoritos");
@@ -314,13 +315,13 @@ void favs_guardar() {
     for (int i = 0; i < num_favorites; i++) {
         int found = 0;
         for (int j = 0; j < existing_count; j++) {
-            if (strcmp(favorites[i].command, existing_commands[j]) == 0) {
+            if (strcmp(favoritos[i].command, existing_commands[j]) == 0) {
                 found = 1;
                 break;
             }
         }
         if (!found) {
-            fprintf(file, "%s\n", favorites[i].command);
+            fprintf(file, "%s\n", favoritos[i].command);
         }
     }
 
@@ -332,7 +333,7 @@ void favs_guardar() {
 void favs_agregar(char *cmd) {
     
     for (int i = 0; i < num_favorites; i++) {
-        if (strcmp(favorites[i].command, cmd) == 0) {
+        if (strcmp(favoritos[i].command, cmd) == 0) {
             return;
         }
     }
@@ -341,8 +342,8 @@ void favs_agregar(char *cmd) {
         return;
     }
     if (num_favorites < MAX_NUM_ARGS) {
-        favorites[num_favorites].id = num_favorites + 1;
-        strncpy(favorites[num_favorites].command, cmd, MAX_COMMAND_LENGTH);
+        favoritos[num_favorites].id = num_favorites + 1;
+        strncpy(favoritos[num_favorites].command, cmd, MAX_COMMAND_LENGTH);
         num_favorites++;
         //favs_guardar(); // Guardar automáticamente al agregar
         printf("Comando añadido a favoritos: %s\n", cmd);
